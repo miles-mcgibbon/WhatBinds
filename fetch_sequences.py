@@ -40,7 +40,7 @@ except ModuleNotFoundError:
 	from sklearn.cluster import DBSCAN
 
 try:
-        import pandas as pd
+    import pandas as pd
 except ModuleNotFoundError:
 	os.system('python3 -m pip install pandas')
 	import pandas as pd
@@ -91,6 +91,8 @@ def parse_args(args): # function to parse command line user inputs
 	# working folder name and file name are based on search terms joined by underscore
 	args_dict["foldername"] = f'{args_dict.get("organism")}_{args_dict.get("protein")}'
 	args_dict["filename"] = f'{args_dict.get("foldername")}/{args_dict.get("organism")}_{args_dict.get("protein")}'
+	args_dict["foldername"] = args_dict["foldername"].replace("*","glob")
+	args_dict["filename"] = args_dict["filename"].replace("*","glob")
 
 	return args_dict
 
@@ -432,18 +434,35 @@ def blastp_against_bindingdb(sequence_tuple): # function to blast a given protei
 
 def check_for_bindingdb_update(): # check if BindingDB reference files need updating
 
+	print('Checking binding database is up to date...')
+
+    # check program files folder exists
+	if not os.path.isdir('program_files'):
+		os.mkdir('program_files')
+
 	# get current month and year
-	currentMonth = datetime.now().month
-	currentYear = datetime.now().year
+	currentMonth = int(datetime.now().month)
+	currentYear = int(datetime.now().year)
+
+	# define the url for BindingDB tsv file of all targets and ligands
+	while True:
+		update_url = f'https://www.bindingdb.org/bind/downloads/BindingDB_All_{currentYear}m{currentMonth}.tsv.zip'
+		response = requests.head(update_url)
+		if int(response.status_code) == 200:
+			break
+		else:
+			if currentMonth == 1:
+				currentYear = currentYear - 1
+				currentMonth = 12
+			else:
+				currentMonth -= 1
 
 	# check the checkpoint file created by this function to see if
 	# file is already up to date
 	# if it is then exit the function
 	if os.path.isfile(f'program_files/{currentYear}m{currentMonth}.checkpoint'):
+		print('BindingDB database already latest version!')
 		return None
-
-	# define the url for BindingDB tsv file of all targets and ligands
-	update_url = f'https://www.bindingdb.org/bind/downloads/BindingDB_All_{currentYear}m{currentMonth}.tsv.zip'
 
 	# do not update unless a reason is found
 	update = False
@@ -563,6 +582,9 @@ def check_for_bindingdb_update(): # check if BindingDB reference files need upda
 		                                    newfasta.write(f'{newline}\n')
 		# close new formatted fasta file
 		newfasta.close()
+
+	if os.path.isfile(f'BindingDB_All_{currentYear}m{currentMonth}.tsv.zip'):
+		os.remove(f'BindingDB_All_{currentYear}m{currentMonth}.tsv.zip')
 
 def main(): # run the program
 
@@ -900,4 +922,5 @@ def main(): # run the program
 
 # run script when called from the command line
 if __name__ == "__main__":
+	check_for_bindingdb_update()
 	main()
