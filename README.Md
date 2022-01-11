@@ -33,7 +33,7 @@ chmod 755 setup.sh
 ./setup.sh
 ```
 
-This will install all dependencies and create a conda enviroment with all the necessary python packages installed.
+This will install all dependencies and create a conda environment with all the necessary python packages installed.
 
 When the program is run for the first time, it will download the BindingDB database for local storage which is a few hundred Mb. Everytime the program is run, it checks for an updated version of BindingDB, and downloads and updates the local copy if it finds one.
 
